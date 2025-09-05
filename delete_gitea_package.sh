@@ -66,14 +66,12 @@ echo "API Endpoint: ${API_ENDPOINT}"
 echo "--------------------------------------------------------"
 
 # 使用 curl 发送 DELETE 请求
-# 使用 --fail 选项，当 HTTP 状态码为 4xx 或 5xx 时，curl 会以非零状态码退出
-# 结合 set -e，这会让脚本在请求失败时自动停止
 echo "⏳ 正在发送删除请求..."
 # 保存响应到临时文件
 response_file=$(mktemp)
 
 # 执行 curl 命令，同时捕获 HTTP 状态码和响应内容
-response_code=$(curl --fail -v -s -w "%{http_code}" \
+response_code=$(curl -s -w "%{http_code}" \
   -X DELETE \
   -H "Authorization: token ${GITEA_TOKEN}" \
   -H "Content-Type: application/json" \
@@ -83,8 +81,13 @@ response_code=$(curl --fail -v -s -w "%{http_code}" \
 curl_exit_code=$?
 
 # --- 4. 结果处理 ---
-# 显示详细的错误信息
-if [ $curl_exit_code -ne 0 ]; then
+# 检查状态码，404也算作成功（包不存在）
+if [ "${response_code}" = "404" ]; then
+    echo "✅ 包已不存在，HTTP 状态码: ${response_code}"
+    echo "🎉 包 '${PKG_NAME}:${PKG_VERSION}' 视为成功删除。"
+    rm "${response_file}"
+    exit 0
+elif [ $curl_exit_code -ne 0 ]; then
     echo "❌ 删除请求失败 (HTTP 状态码: ${response_code})"
     echo "详细错误信息:"
     cat "${response_file}"
