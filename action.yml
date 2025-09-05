@@ -1,0 +1,44 @@
+name: 'Shell Script Executor for Gitea Package Deletion'
+description: 'Sets execute permissions on shell scripts and runs a Gitea package deletion script with Gitea token'
+author: 'kekxv'
+
+inputs:
+  gitea_token:
+    description: 'Gitea Personal Access Token'
+    required: true
+  gitea_url:
+    description: 'Gitea instance URL (e.g., https://gitea.example.com)'
+    required: true
+  gitea_owner:
+    description: 'Package owner in Gitea (username or organization name)'
+    required: true
+  delete_script_path:
+    description: 'Path to the delete script'
+    required: false
+    default: '${{ github.action_path }}/delete_gitea_package.sh'
+  main_script:
+    description: 'Main script to execute'
+    required: false
+    default: '${{ github.action_path }}/auto_delete_multi_module.sh'
+  directory:
+    description: 'Directory to run the script in'
+    required: false
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set execute permissions on shell scripts
+      run: |
+        find ${{ github.action_path }} -name "*.sh" -exec chmod +x {} \;
+      shell: bash
+    
+    - name: Run main script with Gitea token
+      run: |
+        cd ${{ inputs.directory }}
+        GITEA_TOKEN=${{ inputs.gitea_token }} ${{ inputs.main_script }} "${{ inputs.gitea_url }}" "${{ inputs.gitea_owner }}" "${{ inputs.delete_script_path }}"
+      shell: bash
+
+branding:
+  icon: 'terminal'
+  color: 'blue'
