@@ -1,0 +1,22 @@
+# Binaries
+dgateway
+*/dgateway
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Certificates
+certs/*.crt
+certs/*.key
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
