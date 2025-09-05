@@ -69,13 +69,28 @@ echo "--------------------------------------------------------"
 # 使用 --fail 选项，当 HTTP 状态码为 4xx 或 5xx 时，curl 会以非零状态码退出
 # 结合 set -e，这会让脚本在请求失败时自动停止
 echo "⏳ 正在发送删除请求..."
-response_code=$(curl --fail -s -o /dev/null -w "%{http_code}" \
+# 保存响应到临时文件
+response_file=$(mktemp)
+
+# 执行 curl 命令，同时捕获 HTTP 状态码和响应内容
+response_code=$(curl --fail -v -s -w "%{http_code}" \
   -X DELETE \
   -H "Authorization: token ${GITEA_TOKEN}" \
   -H "Content-Type: application/json" \
-  "${API_ENDPOINT}")
+  -o "${response_file}" \
+  "${API_ENDPOINT}" 2>&1)
+
+curl_exit_code=$?
 
 # --- 4. 结果处理 ---
+# 显示详细的错误信息
+if [ $curl_exit_code -ne 0 ]; then
+    echo "❌ 删除请求失败 (HTTP 状态码: ${response_code})"
+    echo "详细错误信息:"
+    cat "${response_file}"
+    rm "${response_file}"
+    exit 1
+fi
 
 # 由于使用了 set -e 和 --fail，如果 curl 遇到 4xx/5xx 错误，脚本会提前退出。
 # 因此，能执行到这里的基本都是成功的情况 (2xx)。
